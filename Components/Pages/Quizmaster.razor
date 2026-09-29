@@ -1,0 +1,105 @@
+@page "/quiz"
+@inherits LiveComponent
+@inject QuizService Quiz
+
+<PageTitle>Quizmaster</PageTitle>
+
+@if (_questions.Count == 0)
+{
+    <p>Er zijn nog geen vragen. <a href="vragen/importeren">Importeer eerst vragen.</a></p>
+    return;
+}
+
+<div class="toolbar">
+    <button @onclick="() => State.GoToQuestion(State.CurrentQuestionIndex - 1)"
+            disabled="@(State.CurrentQuestionIndex == 0)">Vorige</button>
+
+    @if (State.ShownQuestion is null)
+    {
+        <button @onclick="ShowQuestion">Toon op scorebord</button>
+    }
+    else
+    {
+        <button @onclick="State.Hide">Verberg</button>
+    }
+    <button @onclick="() => Quiz.SelectRandomPlayersAsync()">Kies 3 spelers</button>
+
+    <button @onclick="() => State.GoToQuestion(State.CurrentQuestionIndex + 1)"
+            disabled="@(State.CurrentQuestionIndex >= _questions.Count - 1)">Volgende</button>
+</div>
+
+<h1>@(State.CurrentQuestionIndex + 1)) @Current.QuestionText</h1>
+<ol type="A" class="answers">
+    @for (int i = 0; i < 3; i++)
+    {
+        <li class="@(i == Current.CorrectAnswer ? "correct" : "")">@Current.Answers[i]</li>
+    }
+</ol>
+
+<hr />
+<button @onclick="CreateGroup">Nieuwe groep</button>
+
+@foreach (var (group, index) in _groups.Select((g, i) => (g, i)))
+{
+    <section class="group">
+        <header>
+            <h2>Groep @(index + 1) · @PointsPerPlayer(group) punten per speler</h2>
+            <button @onclick="() => _scanningGroupId = group.Id">Scannen</button>
+            <button class="danger" @onclick="() => Quiz.DeleteGroupAsync(group.Id)">Verwijder groep</button>
+        </header>
+
+        @if (_scanningGroupId == group.Id)
+        {
+            @* Rendering the scanner starts the camera; removing it stops it. *@
+            <QrScanner OnCode="code => OnScanned(group.Id, code)" />
+            <button @onclick="() => _scanningGroupId = null">Stop scannen</button>
+            @if (_lastScan is { } s)
+            {
+                <p class="scan-message @(s.Ok ? "ok" : "warning")">@s.Message</p>
+            }
+        }
+
+        <ul>
+            @foreach (var player in group.Players)
+            {
+                <li>
+                    @player.Name
+                    <button class="danger" @onclick="() => Quiz.RemovePlayerFromGroupAsync(group.Id, player.Id)">×</button>
+                </li>
+            }
+        </ul>
+    </section>
+}
+
+@code {
+    private List<Question> _questions = [];
+    private List<QuestionGroup> _groups = [];
+    private int? _scanningGroupId;
+    private ScanResult? _lastScan;
+
+    private Question Current => _questions[Math.Min(State.CurrentQuestionIndex, _questions.Count - 1)];
+
+    protected override async Task ReloadAsync()
+    {
+        if (_questions.Count == 0) _questions = await Quiz.GetQuestionsAsync();
+        if (_questions.Count > 0) _groups = await Quiz.GetGroupsAsync(Current.Id);
+    }
+
+    private void ShowQuestion() => State.Show(new ShownQuestion(
+        State.CurrentQuestionIndex + 1, Current.QuestionText,
+        Current.Answer1, Current.Answer2, Current.Answer3));
+
+    private async Task CreateGroup()
+    {
+        var group = await Quiz.CreateGroupAsync(Current.Id);
+        _scanningGroupId = group.Id;
+        _lastScan = null;
+        State.NotifyChanged();
+    }
+
+    private async Task OnScanned(int groupId, string code) =>
+        _lastScan = await Quiz.AddPlayerByCodeAsync(groupId, code);
+
+    private int PointsPerPlayer(QuestionGroup g) =>
+        g.Players.Count == 0 ? Current.PointsToShare : Current.PointsToShare / g.Players.Count;
+}

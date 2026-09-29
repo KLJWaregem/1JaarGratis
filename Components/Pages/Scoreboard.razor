@@ -1,0 +1,57 @@
+@page "/scorebord"
+@layout BareLayout
+@inherits LiveComponent
+@inject QuizService Quiz
+@inject IJSRuntime JS
+
+<PageTitle>Scorebord</PageTitle>
+
+<div id="scoreboard-grid" class="scoreboard"
+     style="grid-template-columns: repeat(@ColumnCount, 1fr); grid-template-rows: repeat(@PerColumn, 1fr);">
+    @foreach (var (row, index) in _rows.Select((row, i) => (row, i)))
+    {
+        <div @key="row.Id" data-id="@row.Id"
+             class="score-item @(State.SelectedPlayerIds.Contains(row.Id) ? "selected" : "")"
+             style="grid-column:@(index / PerColumn + 1); grid-row:@(index % PerColumn + 1);">
+            <span class="name">@row.Name</span>
+            <span class="points">@row.Points</span>
+        </div>
+    }
+</div>
+
+@if (State.ShownQuestion is { } q)
+{
+    <div class="question-overlay">
+        <p>@q.Number) @q.Text</p>
+        <p>A) @q.A</p>
+        <p>B) @q.B</p>
+        <p>C) @q.C</p>
+    </div>
+}
+
+@code {
+    private const int PerColumn = 10;
+    private List<ScoreboardRow> _rows = [];
+    private bool _canAnimate;
+    private bool _pendingFlip;
+
+    private int ColumnCount => Math.Max(1, (_rows.Count + PerColumn - 1) / PerColumn);
+
+    protected override async Task ReloadAsync()
+    {
+        if (_canAnimate)
+        {
+            await JS.InvokeVoidAsync("scoreboardAnim.prepare", "scoreboard-grid");
+            _pendingFlip = true;
+        }
+        _rows = await Quiz.GetScoreboardAsync();
+    }
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (firstRender) { _canAnimate = true; return; }
+        if (!_pendingFlip) return;
+        _pendingFlip = false;
+        await JS.InvokeVoidAsync("scoreboardAnim.play", "scoreboard-grid");
+    }
+}

@@ -1,0 +1,44 @@
+@page "/vragen"
+@inject QuizService Quiz
+
+<PageTitle>Vragen</PageTitle>
+
+<h1>Vragen</h1>
+<p><a href="vragen/nieuw">Nieuwe vraag</a></p>
+
+<table class="questions">
+    <thead>
+        <tr>
+            <th></th>
+            <th>Vraag</th>
+            <th>Punten</th>
+        </tr>
+    </thead>
+    <tbody>
+        @foreach (var (question, index) in _questions.Select((q, i) => (q, i)))
+        {
+            <tr>
+                <td class="order-buttons">
+                    <button @onclick="() => Move(question.Id, -1)" disabled="@(index == 0)" title="Omhoog">▲</button>
+                    <button @onclick="() => Move(question.Id, 1)" disabled="@(index == _questions.Count - 1)" title="Omlaag">▼</button>
+                </td>
+                <td><a href="vragen/@question.Id">@question.QuestionText</a></td>
+                <td>@question.PointsToShare</td>
+            </tr>
+        }
+    </tbody>
+</table>
+
+@code {
+    private List<Question> _questions = [];
+
+    protected override async Task OnInitializedAsync() => await Reload();
+
+    private async Task Reload() => _questions = await Quiz.GetQuestionsAsync();
+
+    private async Task Move(int id, int direction)
+    {
+        await Quiz.MoveQuestionAsync(id, direction);
+        await Reload();
+    }
+}

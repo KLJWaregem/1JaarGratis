@@ -1,0 +1,29 @@
+@page "/vragen/importeren"
+@inject QuizService Quiz
+
+<PageTitle>Vragen importeren</PageTitle>
+
+<h1>Vragen importeren</h1>
+<p>Eén vraag per regel: <code>Vraag;Antwoord1;Antwoord2;Antwoord3</code>, met een kopregel.
+   Antwoord1 is altijd het juiste antwoord; de volgorde wordt bij het importeren geschud.</p>
+
+<InputFile OnChange="Load" accept=".csv,text/csv" />
+@if (_message is not null) { <p>@_message</p> }
+
+@code {
+    private string? _message;
+
+    private async Task Load(InputFileChangeEventArgs e)
+    {
+        try
+        {
+            using var reader = new StreamReader(e.File.OpenReadStream(maxAllowedSize: 1_000_000));
+            await Quiz.ImportCsvAsync(await reader.ReadToEndAsync());
+            _message = $"{e.File.Name} geïmporteerd.";
+        }
+        catch (Exception ex)
+        {
+            _message = $"Importeren mislukt: {ex.Message}";
+        }
+    }
+}

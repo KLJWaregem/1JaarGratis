@@ -1,0 +1,18 @@
+@inherits LayoutComponentBase
+
+<nav class="topnav">
+    <img src="klj_logo.png" alt="KLJ" height="32" />
+    <NavLink href="" Match="NavLinkMatch.All">Start</NavLink>
+    <NavLink href="quiz">Quizmaster</NavLink>
+    <NavLink href="spelers">Spelers</NavLink>
+    <NavLink href="scorebord">Scorebord</NavLink>
+    <NavLink href="vragen">Vragen</NavLink>
+    <NavLink href="vragen/importeren">Vragen importeren</NavLink>
+</nav>
+
+<main class="page">@Body</main>
+
+<div id="blazor-error-ui" data-nosnippet>
+    Er ging iets mis. <a href="." class="reload">Herladen</a>
+    <span class="dismiss">🗙</span>
+</div>

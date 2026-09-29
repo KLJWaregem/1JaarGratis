@@ -1,0 +1,70 @@
+@page "/spelers"
+@inject QuizService Quiz
+
+<PageTitle>Spelers</PageTitle>
+
+<h1>Spelers</h1>
+
+<h2>Nieuwe speler</h2>
+<EditForm Model="_newPlayer" OnValidSubmit="Create">
+    <div class="new-player">
+        <input @bind="_newPlayer.Name" placeholder="Naam" required />
+        <CodeScanField @bind-Value="_newPlayer.Code" />
+        <input @bind="_newPlayer.PointOffset" type="number" placeholder="Puntenbonus" />
+        <button type="submit">Toevoegen</button>
+    </div>
+</EditForm>
+@if (_message is not null) { <p class="scan-message warning">@_message</p> }
+
+<table class="players">
+    <thead>
+        <tr>
+            <th>Naam</th>
+            <th>Code</th>
+            <th>Puntenbonus</th>
+            <th></th>
+        </tr>
+    </thead>
+    <tbody>
+        @foreach (var player in _players)
+        {
+            <tr>
+                <td><a href="spelers/@player.Id">@player.Name</a></td>
+                <td>@player.Code</td>
+                <td>@player.PointOffset</td>
+                <td><button class="danger" @onclick="() => Delete(player.Id)">Verwijder</button></td>
+            </tr>
+        }
+    </tbody>
+</table>
+
+@code {
+    private List<Player> _players = [];
+    private Player _newPlayer = new();
+    private string? _message;
+
+    protected override async Task OnInitializedAsync() => await Reload();
+
+    private async Task Reload() => _players = await Quiz.GetPlayersAsync();
+
+    private async Task Create()
+    {
+        _message = null;
+        try
+        {
+            await Quiz.SavePlayerAsync(_newPlayer);
+            _newPlayer = new();
+            await Reload();
+        }
+        catch (Exception ex)
+        {
+            _message = $"Aanmaken mislukt: {ex.Message}";
+        }
+    }
+
+    private async Task Delete(int id)
+    {
+        await Quiz.DeletePlayerAsync(id);
+        await Reload();
+    }
+}

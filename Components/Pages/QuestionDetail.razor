@@ -1,0 +1,98 @@
+@page "/vragen/nieuw"
+@page "/vragen/{Id:int}"
+@inject QuizService Quiz
+@inject NavigationManager Nav
+
+<PageTitle>@(Id is null ? "Nieuwe vraag" : "Vraag bewerken")</PageTitle>
+
+<h1>@(Id is null ? "Nieuwe vraag" : "Vraag bewerken")</h1>
+
+@if (_notFound)
+{
+    <p>Deze vraag bestaat niet (meer). <a href="vragen">Terug naar het overzicht</a>.</p>
+    return;
+}
+
+<EditForm Model="_question" OnValidSubmit="Save">
+    <div class="question-form">
+        <label>
+            Vraag
+            <textarea @bind="_question.QuestionText" required></textarea>
+        </label>
+
+        <p>Kies het juiste antwoord:</p>
+        @for (int i = 0; i < 3; i++)
+        {
+            var index = i;
+            <label class="answer-row">
+                <input type="radio" name="correct" checked="@(_question.CorrectAnswer == index)"
+                       @onchange="() => _question.CorrectAnswer = index" />
+                <input @bind="_answers[index]" placeholder="Antwoord @(index + 1)" required />
+            </label>
+        }
+
+        <label>
+            Punten te verdelen
+            <input @bind="_question.PointsToShare" type="number" />
+        </label>
+
+        <div class="toolbar">
+            <button type="submit">Bewaren</button>
+            @if (Id is not null)
+            {
+                <button type="button" class="danger" @onclick="Delete">Verwijder vraag</button>
+            }
+            <a href="vragen">Annuleer</a>
+        </div>
+    </div>
+</EditForm>
+@if (_message is not null) { <p class="scan-message warning">@_message</p> }
+
+@code {
+    [Parameter] public int? Id { get; set; }
+
+    private Question _question = new();
+    private string[] _answers = ["", "", ""];
+    private string? _message;
+    private bool _notFound;
+
+    protected override async Task OnParametersSetAsync()
+    {
+        if (Id is int id)
+        {
+            var existing = await Quiz.GetQuestionAsync(id);
+            if (existing is null) { _notFound = true; return; }
+            _question = existing;
+        }
+        else
+        {
+            _question = new();
+        }
+        _answers = [_question.Answer1, _question.Answer2, _question.Answer3];
+    }
+
+    private async Task Save()
+    {
+        _question.Answer1 = _answers[0];
+        _question.Answer2 = _answers[1];
+        _question.Answer3 = _answers[2];
+        try
+        {
+            await Quiz.SaveQuestionAsync(_question);
+            Nav.NavigateTo("vragen");
+        }
+        catch (Exception ex)
+        {
+            _message = $"Bewaren mislukt: {ex.Message}";
+        }
+    }
+
+    private async Task Delete()
+    {
+        if (Id is int id)
+        {
+            await Quiz.DeleteQuestionAsync(id);
+            Nav.NavigateTo("vragen");
+        }
+    }
+}

@@ -1,0 +1,51 @@
+@implements IAsyncDisposable
+@inject IJSRuntime JS
+
+<div id="@_elementId" class="qr-scanner"></div>
+@if (_error is not null)
+{
+    <p class="scan-message warning">Camera niet beschikbaar: @_error</p>
+}
+
+@code {
+    /// <summary>Called once per scanned code.</summary>
+    [Parameter, EditorRequired] public EventCallback<string> OnCode { get; set; }
+
+    private readonly string _elementId = $"qr-{Guid.NewGuid():N}";
+    private IJSObjectReference? _module;
+    private DotNetObjectReference<QrScanner>? _selfRef;
+    private string? _error;
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (!firstRender) return;
+        try
+        {
+            _module = await JS.InvokeAsync<IJSObjectReference>("import", "./js/qrScanner.js");
+            _selfRef = DotNetObjectReference.Create(this);
+            await _module.InvokeVoidAsync("start", _elementId, _selfRef);
+        }
+        catch (JSException ex)
+        {
+            _error = ex.Message;   // e.g. no camera permission, or not on HTTPS
+            StateHasChanged();
+        }
+    }
+
+    [JSInvokable]
+    public Task OnScanned(string code) => OnCode.InvokeAsync(code);
+
+    public async ValueTask DisposeAsync()
+    {
+        try
+        {
+            if (_module is not null)
+            {
+                await _module.InvokeVoidAsync("stop", _elementId);
+                await _module.DisposeAsync();
+            }
+        }
+        catch (JSDisconnectedException) { }  // tab already closed
+        _selfRef?.Dispose();
+    }
+}

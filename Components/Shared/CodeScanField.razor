@@ -1,0 +1,23 @@
+<div class="code-field">
+    <input value="@Value" @oninput="OnInput" placeholder="Code (QR)" required />
+    <button type="button" @onclick="() => _scanning = !_scanning">@(_scanning ? "Stop scannen" : "Scan")</button>
+</div>
+@if (_scanning)
+{
+    <QrScanner OnCode="OnScanned" />
+}
+
+@code {
+    [Parameter] public string Value { get; set; } = "";
+    [Parameter] public EventCallback<string> ValueChanged { get; set; }
+
+    private bool _scanning;
+
+    private Task OnInput(ChangeEventArgs e) => ValueChanged.InvokeAsync((string?)e.Value ?? "");
+
+    private async Task OnScanned(string code)
+    {
+        _scanning = false;
+        await ValueChanged.InvokeAsync(code);
+    }
+}

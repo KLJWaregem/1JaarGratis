@@ -1,0 +1,76 @@
+@page "/spelers/{Id:int}"
+@inject QuizService Quiz
+@inject NavigationManager Nav
+
+<PageTitle>Speler bewerken</PageTitle>
+
+<h1>Speler bewerken</h1>
+
+@if (_notFound)
+{
+    <p>Deze speler bestaat niet (meer). <a href="spelers">Terug naar het overzicht</a>.</p>
+    return;
+}
+
+@if (_player is null)
+{
+    return;
+}
+
+<EditForm Model="_player" OnValidSubmit="Save">
+    <div class="player-form">
+        <label>
+            Naam
+            <input @bind="_player.Name" required />
+        </label>
+        <label>
+            Code (QR)
+            <CodeScanField @bind-Value="_player.Code" />
+        </label>
+        <label>
+            Puntenbonus
+            <input @bind="_player.PointOffset" type="number" />
+        </label>
+
+        <div class="toolbar">
+            <button type="submit">Bewaren</button>
+            <button type="button" class="danger" @onclick="Delete">Verwijder speler</button>
+            <a href="spelers">Annuleer</a>
+        </div>
+    </div>
+</EditForm>
+@if (_message is not null) { <p class="scan-message warning">@_message</p> }
+
+@code {
+    [Parameter] public int Id { get; set; }
+
+    private Player? _player;
+    private string? _message;
+    private bool _notFound;
+
+    protected override async Task OnParametersSetAsync()
+    {
+        var existing = await Quiz.GetPlayerAsync(Id);
+        if (existing is null) { _notFound = true; return; }
+        _player = existing;
+    }
+
+    private async Task Save()
+    {
+        try
+        {
+            await Quiz.SavePlayerAsync(_player!);
+            Nav.NavigateTo("spelers");
+        }
+        catch (Exception ex)
+        {
+            _message = $"Bewaren mislukt: {ex.Message}";
+        }
+    }
+
+    private async Task Delete()
+    {
+        await Quiz.DeletePlayerAsync(Id);
+        Nav.NavigateTo("spelers");
+    }
+}
