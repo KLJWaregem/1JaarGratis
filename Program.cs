@@ -1,6 +1,7 @@
 using EenJaarGratis.Components;
 using EenJaarGratis.Data;
 using EenJaarGratis.Services;
+using Microsoft.AspNetCore.HttpOverrides;
 using Microsoft.EntityFrameworkCore;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -30,6 +31,13 @@ using (var scope = app.Services.CreateScope())
     }
     catch (Microsoft.Data.Sqlite.SqliteException) { /* column already exists */ }
 }
+
+// Container deployments sit behind a TLS-terminating reverse proxy, so trust its
+// X-Forwarded-Proto header rather than looping on UseHttpsRedirection below.
+app.UseForwardedHeaders(new ForwardedHeadersOptions
+{
+    ForwardedHeaders = ForwardedHeaders.XForwardedFor | ForwardedHeaders.XForwardedProto
+});
 
 if (!app.Environment.IsDevelopment())
 {

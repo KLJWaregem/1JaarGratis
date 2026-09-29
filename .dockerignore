@@ -1,0 +1,11 @@
+**/bin/
+**/obj/
+**/.vs/
+**/.idea/
+**/.git/
+**/*.db*
+appsettings.Development.json
+docker-compose*.yml
+Dockerfile
+.dockerignore
+README.md
