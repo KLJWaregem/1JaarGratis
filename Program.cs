@@ -21,15 +21,7 @@ using (var scope = app.Services.CreateScope())
 {
     var db = scope.ServiceProvider.GetRequiredService<IDbContextFactory<AppDbContext>>().CreateDbContext();
     db.Database.EnsureCreated();
-
-    // Sketch shortcut: EnsureCreated() only builds a brand-new database, so patch
-    // in columns added after the db file already existed (see Data/Entities.cs).
-    try
-    {
-        db.Database.ExecuteSqlRaw("ALTER TABLE Questions ADD COLUMN SortOrder INTEGER NOT NULL DEFAULT 0");
-        db.Database.ExecuteSqlRaw("UPDATE Questions SET SortOrder = Id");
-    }
-    catch (Microsoft.Data.Sqlite.SqliteException) { /* column already exists */ }
+    db.Database.Migrate();
 }
 
 // Container deployments sit behind a TLS-terminating reverse proxy, so trust its

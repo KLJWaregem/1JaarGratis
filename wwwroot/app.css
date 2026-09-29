@@ -46,6 +46,7 @@ button:focus-visible, a:focus-visible { outline: 3px solid var(--klj-light); out
 .players th, .players td { text-align: left; padding: .4rem .6rem; border-bottom: 1px solid #ddd; }
 .new-player { display: flex; flex-wrap: wrap; gap: .5rem; align-items: flex-start; }
 .new-player input { font: inherit; padding: .4rem .6rem; border: 1px solid #888; border-radius: .4rem; }
+.code-field-wrap { flex-basis: 100%; }
 .player-form { display: flex; flex-direction: column; gap: .75rem; max-width: 30rem; }
 .player-form label { display: flex; flex-direction: column; gap: .25rem; }
 .player-form input { font: inherit; padding: .4rem .6rem; border: 1px solid #888; border-radius: .4rem; }

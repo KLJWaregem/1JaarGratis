@@ -137,7 +137,7 @@ public class QuizService(IDbContextFactory<AppDbContext> dbFactory, GameState st
         if (group is null) return new(false, "Groep bestaat niet meer");
 
         bool alreadyInAGroup = await db.QuestionGroups
-            .AnyAsync(g => g.QuestionId == group.QuestionId && g.Players.Any(p => p.Id == player.Id));
+            .AnyAsync(g => g.QuestionId == group.QuestionId && g.Id != groupId && g.Players.Any(p => p.Id == player.Id));
         if (alreadyInAGroup) return new(false, $"{player.Name} zit al in een groep");
 
         group.Players.Add(player);

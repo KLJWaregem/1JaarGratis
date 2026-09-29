@@ -9,7 +9,9 @@
 <EditForm Model="_newPlayer" OnValidSubmit="Create">
     <div class="new-player">
         <input @bind="_newPlayer.Name" placeholder="Naam" required />
-        <CodeScanField @bind-Value="_newPlayer.Code" />
+        <div class="code-field-wrap">
+            <CodeScanField @bind-Value="_newPlayer.Code" />
+        </div>
         <input @bind="_newPlayer.PointOffset" type="number" placeholder="Puntenbonus" />
         <button type="submit">Toevoegen</button>
     </div>
