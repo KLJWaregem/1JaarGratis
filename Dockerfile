@@ -5,7 +5,7 @@ COPY EenJaarGratis.csproj .
 RUN dotnet restore EenJaarGratis.csproj
 
 COPY . .
-RUN dotnet publish EenJaarGratis.csproj -c Release -o /app/publish --no-restore
+RUN dotnet publish EenJaarGratis.csproj -c Release -o /app/publish
 
 FROM mcr.microsoft.com/dotnet/aspnet:10.0 AS final
 WORKDIR /app
